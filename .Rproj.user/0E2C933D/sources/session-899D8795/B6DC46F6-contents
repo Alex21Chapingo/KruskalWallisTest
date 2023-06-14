@@ -1,0 +1,188 @@
+---
+title: "Prueba Kruskal-Wallis"
+
+author: "José Alejandro Jiménez Estrada"
+
+date: "19/06/2023"
+output:
+   rmdformats::readthedown:
+   #prettydoc::html_pretty:
+    #theme: readthedown
+    highligh: monochrome
+    html_document: default
+    #math: katex
+  #pdf_document: install.packages("prettydoc")
+
+
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{sectsty} \sectionfont{\centering \emph}
+- \usepackage[document]{ragged2e}
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+
+```{r}
+rm(list=ls())
+```
+
+\
+<div align="justify">
+# El método
+
+El estadistico de prueba que sirve para comparar con el valor crítico está dado por
+
+$$H=\frac{12}{N(N+1)} \sum_{i=1}^g n_i (\bar r_i-\bar r)^2$$
+donde
+
+- $n_i$ es el número de observaciones en el grupo $i$ $i=1 \dots 3$ ($n_1,n_2,n_3$)
+- $r_{ij}$ es el rango (entre todas las observaciones) de la obervación $j$ en el grupo $i$
+- $N$  es el número total de observaciones entre todos los grupos.
+- $\bar r_i=\frac{\sum_{j=1}^{n_i} r_{ij}}{n_i}$
+- $\bar r=\frac{\sum_{i=1}^g \bar r_i}{g}$ 
+
+
+\
+**Prueba de hipótesis:**
+\[H_0:\text{ todas las muestras provienen de la misma población } \quad \text{(Hipótesis nula)}\] 
+\[H_1: \text{Al menos una muestra proviene de una población con una distribución distinta} \quad \text{(Hipótesis alternativa)}\]
+
+- Regla de decisión: si $H>\chi^2(1-\alpha,k=g-1)$ se rechaza la hipótesis nula.
+
+# Función Kruskal-Wallis
+
+
+```{r}
+kruswall = function(y,alpha) {
+  # Estadistico Kruskall-Wallis
+  # y: lista que contiene los datos de los g tratamientos
+  
+  g = length(y)                # numero de tratamientos
+  n = unlist(lapply(y, length))# ni (numero de obs en el i-esimo tratamiento)
+  r = rank(unlist(y))          #g:numero de grupos
+  r.mean = NULL
+  ninit = 1
+  for (i in 1:g) {  # i=1,...,3
+    r.mean = c(r.mean, mean(r[(ninit):(ninit+n[i]-1)])) #medias del rango por grupo
+    ninit = ninit+n[i]
+  }    
+  r.mean.g = mean(r.mean) #media general del rango o mean(r)
+  N = sum(n)
+  H = 12/(N*(N+1))* sum(n*(r.mean - r.mean.g)^2) #estadístico de prueba 
+
+    critico=qchisq(1-alpha,g-1)
+    
+  if (H > critico) {
+    print("Se rechaza la hipótesis nula. Hay diferencias significativas entre al menos dos grupos:")
+  } else {
+    print("No se rechaza la hipótesis nula. No hay suficiente evidencia para concluir que existen diferencias significativas entre al menos dos grupos")
+  }
+    
+resultado<-list(grupos=g, n_i=n, N=N, r.mean_i=round(r.mean,3), r.mean=r.mean.g, chi_squared=round(H,3), df=g-1,Vcritico=round(qchisq(1-alpha,g-1),3),pvalue=1-pchisq(H,g-1))
+  return(resultado)
+}
+
+```
+
+\
+<div align="justify">
+# Demostrar si la dieta suministrada en aves de postura tiene repercusiones significativas en la cantidad de huevos producidos en un lapso de tiempo utilizando el método no paramétrico Kruskal-Wallis.
+
+**Ejemplo 1**
+
+Un estudio compara el número de huevos que ponen 60 aves de postura (gallinas) en un lapso de tiempo de una semana,  bajo 3 dietas distintas. ¿Existen diferencias significativas dependiendo de las dietas suministradas?
+
+- El primer grupo de aves de postura (gallinas) está sometido a una dieta estricta en trigo
+- El segundo grupo de aves de postura (gallinas) está sometido a una dieta estricta en sorgo y coracán 
+- El tercer grupo de aves de postura (gallinas) está sometido a una dieta estricta en semilla de soja 
+
+Los tres grupos de aves cuentan con las mismas condiciones generales como infraestructura, cantidad de alimento (130 gr/día), cuidados, condiciones climatologicas (21 °C) y raza Lohman, un peso comprendido entre 1.7 a 2.2  kilogramos y una edad de 25 semanas. 
+\
+<div align="justify">
+**Datos**
+
+1. Se asignó un nivel de significancia $\alpha=0.05$
+2. Se creo una lista la cual incluye  los tres grupos de aves de postura con sus respectivos número de huevos puestos por semana, con las 20 gallinas de cada grupo.
+
+```{r}
+
+alpha<-0.05
+datos = list(
+ grupo1<-c(3,4,5,3,4,3,4,5,2,5,4,6,4,5,6,6,7,3,4,2),
+ grupo2<-c(5,4,5,3,5,4,3,5,4,3,3,5,5,5,4,4,3,4,5,6),
+ grupo3<-c(6,5,6,3,6,4,5,7,3,6,5,4,5,7,6,5,4,3,5,5)
+  )
+
+```
+
+# Resultados
+
+
+```{r}
+kruswall(datos,alpha)
+```
+
+\
+
+# Usando la función *kruskal.test* de R
+
+
+```{r}
+datosh <- data.frame(
+   condicion = c(rep("condicion1",20), rep("condicion2", 20), rep("condicion3", 20)),
+  n_huevos=c(3,4,5,3,4,3,4,5,2,5,4,6,4,5,6,6,7,3,4,2,
+               5,4,5,3,5,4,3,5,4,3,3,5,5,5,4,4,3,4,5,6,
+                   6,5,6,3,6,4,5,7,3,6,5,4,5,7,6,5,4,3,5,5)
+
+)
+
+
+kruskal.test(n_huevos ~ condicion, data = datosh)
+```
+
+
+# Demostrar si el tratamiento aplicado en cierta planta tiene repercusiones significativas en el crecimiento de estas utilizando el método no paramétrico Kruskal-Wallis.
+
+**Ejemplo 2**
+
+El conjunto de datos "PlantGrowth" incorporado en el lenguaje de programación R  contiene dos variables de interes:
+
+weight: Es una variable numérica que representa el peso del crecimiento de las plantas. Es la variable de interés principal en este conjunto de datos.
+
+group: Es una variable categórica que indica el grupo de tratamiento al que pertenece cada planta. Hay tres grupos de tratamiento: "ctrl", "trt1" y "trt2" y cada grupo contiene 10 observaciones.
+
+El objetivo de utilizar la prueba de Kruskal-Wallis con el conjunto de datos "PlantGrowth" sería determinar si existen diferencias significativas en el crecimiento de las plantas entre los diferentes grupos de tratamiento ("ctrl", "trt1" y "trt2").
+```{r}
+ #install.packages("datasets")
+#data("PlantGrowth")
+#PlantGrowth
+
+datos2 = list(
+ctrl<-c(4.17,5.58,5.18,6.11, 4.50,4.61,5.17,4.53, 5.33,5.14),
+trt1<-c(4.81,4.17,4.41,3.59,5.87,3.83,6.03, 4.89,4.32,4.69),
+trt2<-c(6.31, 5.12,5.54,5.50, 5.37,5.29,4.92,6.15, 5.80, 5.26 )
+)
+
+
+kruswall(datos2,alpha)
+
+```
+Como el valor p es menor que el nivel de significancia de 0.05, podemos concluir que existen diferencias significativas entre los grupos de tratamiento.
+
+# Usando la función *kruskal.test* de R
+
+```{r}
+datos <- data.frame(
+  tratamiento = c(rep("ctrl", 10), rep("trt", 10), rep("trt2", 10)),
+  crecimiento=c(4.17,5.58,5.18,6.11, 4.50,4.61,5.17,4.53, 5.33,5.14,
+    4.81,4.17,4.41,3.59,5.87,3.83,6.03, 4.89,4.32,4.69,
+6.31, 5.12,5.54,5.50, 5.37,5.29,4.92,6.15, 5.80, 5.26 )
+)
+
+kruskal.test(crecimiento ~ tratamiento, data = datos)
+```
+
+Observe que los datos obtenidos con la función Kruswall y con la función kruskal coinciden.
