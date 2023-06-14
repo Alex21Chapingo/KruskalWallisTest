@@ -1,0 +1,12 @@
+Package: KruskalWalis
+Type: Package
+Title: Realiza la prueba de Kruskal-Wallis
+Version: 0.1.0
+Author: José Alejandro Jiménez Estrada
+Maintainer: The package maintainer <alej4147@gmail.com>
+Description: Este paquete realiza la prueba de Kruskal-Wallis para determinar si existen diferencias significativas entre las medianas de tres o más grupos independientes cuando no se cumplen los supuestos de los métodos paramétricos.
+References: Hecke, T. V. (2012). Power study of anova versus Kruskal-Wallis test. Journal of Statistics and Management Systems, 15(2-3), 241-247.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.1

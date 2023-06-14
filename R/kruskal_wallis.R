@@ -1,0 +1,63 @@
+#' Prueba de Kruskal-Wallis
+#'
+#' Realiza la prueba de Kruskal-Wallis, es decir,
+#'determina si hay diferencias significativas
+#'entre las medianas de tres o más grupos independientes
+#'cuando no se cumplen los supuestos de los métodos paramétricos.
+#'
+#' @param y (list) datos
+#' @param alpha (numeric) nivel de significancia
+#' @return una lista con el número de grupos, la longitud de cada grupo, número total de observaciones, media del rango por grupo, media del rango total, el estadístico de prueba, los grados de libertad, el valor crítico y el p-value.
+#' @export
+#'
+#' @examples
+#'   \dontrun{
+#' #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' #Ejemplo 1:
+#' #El conjunto de datos “PlantGrowth” incorporado en el lenguaje de programación R contiene dos variables de interes:
+#' #weight: Es una variable numérica que representa el peso del crecimiento de las plantas. Es la variable de interés principal en este conjunto de datos.
+#' #group: Es una variable categórica que indica el grupo de tratamiento al que pertenece cada planta. Hay tres grupos de tratamiento: “ctrl”, “trt1” y “trt2” y cada grupo contiene 10 observaciones.
+#' #El objetivo de utilizar la prueba de Kruskal-Wallis con el conjunto de datos “PlantGrowth” sería determinar si existen diferencias significativas en el crecimiento de las plantas entre los diferentes grupos de tratamiento (“ctrl”, “trt1” y “trt2”).
+#'
+#' #install.packages("datasets")
+#' #data("PlantGrowth")
+#' #PlantGrowth
+#' datos = list(
+#'  ctrl<-c(4.17,5.58,5.18,6.11, 4.50,4.61,5.17,4.53, 5.33,5.14),
+#'  trt1<-c(4.81,4.17,4.41,3.59,5.87,3.83,6.03, 4.89,4.32,4.69),
+#'  trt2<-c(6.31, 5.12,5.54,5.50, 5.37,5.29,4.92,6.15, 5.80, 5.26 )
+#')
+#' #Cargar la libreria
+#' library("KruskalWalis")
+#' kruswall(y=datos,alpha=alpha)
+#'   }
+ kruswall = function(y,alpha) {
+  # Estadistico Kruskall-Wallis
+  # y: lista que contiene los datos de los g tratamientos
+
+  g = length(y)                # numero de tratamientos
+  n = unlist(lapply(y, length))# ni (numero de obs en el i-esimo tratamiento)
+  r = rank(unlist(y))          #g:numero de grupos
+  r.mean = NULL
+  ninit = 1
+  for (i in 1:g) {  # i=1,...,3
+    r.mean = c(r.mean, mean(r[(ninit):(ninit+n[i]-1)])) #medias del rango por grupo
+    ninit = ninit+n[i]
+  }
+  r.mean.g = mean(r.mean) #media general del rango o mean(r)
+  N = sum(n)
+  H = 12/(N*(N+1))* sum(n*(r.mean - r.mean.g)^2) #estadístico de prueba
+
+  critico=qchisq(1-alpha,g-1)
+
+  if (H > critico) {
+    print("Se rechaza la hipótesis nula. Hay diferencias significativas entre al menos dos grupos:")
+  } else {
+    print("No se rechaza la hipótesis nula. No hay suficiente evidencia para concluir que existen diferencias significativas entre al menos dos grupos")
+  }
+
+  resultado<-list(grupos=g, n_i=n, N=N, r.mean_i=round(r.mean,3), r.mean=r.mean.g, chi_squared=round(H,3), df=g-1,Vcritico=round(qchisq(1-alpha,g-1),3),pvalue=1-pchisq(H,g-1))
+  return(resultado)
+}
+
+
